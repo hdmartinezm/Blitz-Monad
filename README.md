@@ -1,396 +1,279 @@
-# Tempo — Rhythm Game Fully On-Chain
+# FlipChain — Trivia Game Fully On-Chain en Monad
 
-**Simon-says on-chain powered by Monad's 1-second blocks.**
+**Juego de trivia competitivo on-chain, impulsado por los bloques de 1 segundo de Monad.**
 
-Tempo is a competitive rhythm game where players must submit the correct symbol within 2-3 second rounds. The fast-paced gameplay is only possible thanks to Monad's 1-second block times — impossible on Ethereum's 12-second blocks.
+FlipChain es un juego de trivia por eliminación donde los jugadores responden preguntas en tiempo real. El último superviviente gana todo el prize pool. La velocidad del juego solo es posible gracias a los bloques de 1 segundo de Monad — imposible en Ethereum con bloques de 12 segundos.
 
-Built for the Monad Hackathon.
+Construido para el Monad Hackathon por **Team Blitz**.
 
 ---
 
-## 🎮 Game Mechanics
+## 🎮 Mecánicas del Juego
 
-1. **Host creates a match** with entry fee → contract holds the pot
-2. **N players join** by paying the entry fee
-3. **Host starts the match** → lobby closes
-4. **Each round:**
-   - Someone calls `startRound()` → contract reveals random symbol (↑↓←→ = 0,1,2,3) + deadline
-   - Alive players have N seconds to `submit(matchId, symbol)` with the correct symbol
-   - After deadline, anyone calls `endRound()` → eliminates players who failed or didn't submit
-5. **Last player standing** calls `claimWin()` → receives the entire pot
+1. **Host crea una sala** con entry fee → el contrato guarda el pot
+2. **Jugadores se unen** pagando el entry fee
+3. **Host inicia el match** → lobby se cierra
+4. **Cada ronda:**
+   - Se llama `startRound()` → contrato revela símbolo aleatorio + deadline
+   - El frontend muestra una pregunta de trivia (A/B/C/D)
+   - Jugadores vivos tienen N segundos para responder
+   - Si responden correcto → envían el símbolo correcto al contrato → sobreviven
+   - Si responden mal o no responden → son eliminados
+5. **Último superviviente** llama `claimWin()` → recibe todo el pot
+
+### Reglas
+- Mínimo 2 jugadores para iniciar
+- Responde correctamente la pregunta de cada ronda antes de que se acabe el tiempo
+- Respuesta incorrecta o timeout = ELIMINACIÓN
+- El último superviviente gana todo el prize pool
 
 ---
 
 ## 🏗️ Tech Stack
 
-- **Blockchain:** Monad Testnet (chainId 10143)
-- **Framework:** Foundry
-- **Solidity:** 0.8.28 with `evm_version = "prague"` (required by Monad)
-- **Deploy:** `forge script` (NOT `forge create` — it's buggy)
-- **Verification:** MonadVision (Sourcify) or Monadscan (Etherscan-compatible)
+| Capa | Tecnología |
+|------|-----------|
+| Blockchain | Monad Testnet (chainId 10143) |
+| Smart Contract | Solidity 0.8.28, Foundry |
+| Frontend | React + TypeScript + Vite |
+| Web3 | wagmi v3 + viem + RainbowKit |
+| Estilos | Tailwind CSS v4 |
+| Bot | Node.js + viem |
 
 ---
 
-## 📦 Installation
+## 📦 Instalación
 
 ```bash
-# Clone the repo
+# Clonar el repo
 git clone https://github.com/hdmartinezm/Blitz-Monad.git
 cd Blitz-Monad
 
-# Install dependencies
+# Instalar dependencias del contrato
 forge install
 
 # Build
 forge build
 
-# Run tests (15/15 passing)
+# Tests (15/15 passing)
 forge test -vv
 ```
+
+### Frontend
+
+```bash
+cd flipchain_export
+npm install
+npm run dev -- --host --port 3002
+```
+
+Abre http://localhost:3002
 
 ---
 
 ## 🚀 Deploy
 
-### 1. Setup Environment
+### 1. Configurar entorno
 
 ```bash
-# Copy .env template
 cp .env.example .env
-
-# Edit .env with your keys:
-# - PRIVATE_KEY: your deployer wallet private key
-# - PLAYER2_KEY, PLAYER3_KEY: additional wallets for demo (optional)
-# - MONADEXPLORER_API_KEY: for contract verification (optional)
+# Editar .env con tu PRIVATE_KEY
 ```
 
-### 2. Get Testnet MON
+### 2. Obtener MON de testnet
 
-Request testnet tokens from the Monad faucet:
 ```bash
 curl -X POST https://agents.devnads.com/v1/faucet \
   -H "Content-Type: application/json" \
-  -d '{"chainId": 10143, "address": "YOUR_ADDRESS"}'
+  -d '{"chainId": 10143, "address": "TU_ADDRESS"}'
 ```
 
-### 3. Deploy Contract
+### 3. Deploy
 
 ```bash
-forge script script/Deploy.s.sol \
-  --rpc-url monad_testnet \
+forge script script/Deploy.s.sol:DeployTempo \
+  --rpc-url https://testnet-rpc.monad.xyz \
   --broadcast \
   --private-key $PRIVATE_KEY
 ```
 
-Copy the deployed contract address and add it to `.env`:
-```bash
-TEMPO_ADDRESS=0x...
-```
+### 4. Actualizar dirección en frontend
 
-### 4. Verify Contract (Optional)
-
-**Option A: MonadVision (Sourcify, no API key needed)**
-```bash
-forge verify-contract $TEMPO_ADDRESS \
-  src/Tempo.sol:Tempo \
-  --chain 10143 \
-  --verifier sourcify \
-  --verifier-url https://sourcify-api-monad.blockvision.org/
-```
-
-**Option B: Monadscan (Etherscan-compatible, requires API key)**
-```bash
-forge verify-contract $TEMPO_ADDRESS \
-  src/Tempo.sol:Tempo \
-  --chain 10143 \
-  --verifier etherscan \
-  --etherscan-api-key $MONADEXPLORER_API_KEY \
-  --watch
-```
-
-Check verification:
-- MonadVision: `https://testnet.monadexplorer.com/address/$TEMPO_ADDRESS`
-- Monadscan: `https://testnet.monadscan.com/address/$TEMPO_ADDRESS`
-
----
-
-## 🎯 Demo Scripts
-
-### Seed a Match (3 players)
-
-```bash
-forge script script/Seed.s.sol \
-  --rpc-url monad_testnet \
-  --broadcast \
-  --private-key $PRIVATE_KEY
-```
-
-This creates a match with 3 wallets, all join, host starts, and plays round 1.
-
-### Interactive Demo (Live Gameplay)
-
-Use the atomic interaction scripts for live demos:
-
-```bash
-# Set the match ID
-export MATCH_ID=0
-
-# 1. View match state
-forge script script/Interact.s.sol:ShowMatch \
-  --rpc-url monad_testnet
-
-# 2. Start a round
-forge script script/Interact.s.sol:StartRound \
-  --rpc-url monad_testnet \
-  --broadcast \
-  --private-key $PRIVATE_KEY
-
-# 3. Submit responses (symbol: 0=Up, 1=Down, 2=Left, 3=Right)
-export SYMBOL=2  # example: Left
-
-forge script script/Interact.s.sol:SubmitHost \
-  --rpc-url monad_testnet \
-  --broadcast \
-  --private-key $PRIVATE_KEY
-
-forge script script/Interact.s.sol:SubmitPlayer2 \
-  --rpc-url monad_testnet \
-  --broadcast \
-  --private-key $PLAYER2_KEY
-
-forge script script/Interact.s.sol:SubmitPlayer3 \
-  --rpc-url monad_testnet \
-  --broadcast \
-  --private-key $PLAYER3_KEY
-
-# 4. End round (after deadline passes)
-forge script script/Interact.s.sol:EndRound \
-  --rpc-url monad_testnet \
-  --broadcast \
-  --private-key $PRIVATE_KEY
-
-# 5. Claim pot (when only 1 player remains)
-forge script script/Interact.s.sol:ClaimWin \
-  --rpc-url monad_testnet \
-  --broadcast \
-  --private-key $PRIVATE_KEY
-```
-
-### Automated Full Demo (For Pitch)
-
-Complete game from start to finish with 3 players:
-
-```bash
-forge script script/DemoFull.s.sol:DemoFull \
-  --rpc-url monad_testnet \
-  --broadcast \
-  --private-key $PRIVATE_KEY
-```
-
-This script:
-1. Creates a match (host pays entry fee)
-2. Player2 and Player3 join
-3. Host starts the match
-4. Plays 3 rounds with eliminations
-5. Winner claims the pot
-
-Perfect for live demonstrations during the pitch!
-
-### Quick Test
-
-Verify the deployed contract is working:
-
-```bash
-forge script script/QuickTest.s.sol:QuickTest \
-  --rpc-url monad_testnet \
-  --broadcast \
-  --private-key $PRIVATE_KEY
+Editar `flipchain_export/src/lib/web3.ts`:
+```ts
+export const TEMPO_ADDRESS = '0xTU_CONTRATO' as const
 ```
 
 ---
 
-## 🧪 Testing
+## 🌐 Contrato Deployado
 
-```bash
-# Run all tests
-forge test
+| Red | Dirección |
+|-----|-----------|
+| Monad Testnet | `0xe84a13e04e2139de5ecf33f7e800b2176d994806` |
 
-# Verbose output
-forge test -vv
-
-# Gas report
-forge test --gas-report
-
-# Test coverage
-forge coverage
-```
-
-**Test Suite (15/15 passing):**
-- ✅ Happy path: full game with 2 rounds, eliminations, claim
-- ✅ 9 revert scenarios (host-only, deadline, alive, fees, double-claim, etc.)
-- ✅ Edge case: all players eliminated → host wins by default
-- ✅ 2 fuzz tests (entry fee accounting, invalid symbols)
+Explorers:
+- [Monadscan](https://testnet.monadscan.com/address/0xe84a13e04e2139de5ecf33f7e800b2176d994806)
+- [Socialscan](https://monad-testnet.socialscan.io/address/0xe84a13e04e2139de5ecf33f7e800b2176d994806)
+- [MonadVision](https://testnet.monadvision.com/address/0xe84a13e04e2139de5ecf33f7e800b2176d994806)
 
 ---
 
-## 📄 Contract Interface
+## 🎯 Cómo Jugar
 
-### Core Functions
+### Host (Crear Sala)
+1. Ir a http://localhost:3002
+2. Conectar wallet en MetaMask (Monad Testnet)
+3. Clic en **"🆕 CREAR SALA"**
+4. Seleccionar dificultad (Fácil / Medio / Difícil / Insano)
+5. Confirmar transacción en MetaMask
+6. Compartir el **número de sala** con los demás jugadores
+7. Esperar jugadores → clic en **"INICIAR JUEGO"**
 
-```solidity
-// Create a match (host pays entry fee)
-function createMatch(uint256 entryFee, uint256 roundDuration) external payable returns (uint256 matchId);
+### Jugadores (Unirse)
+1. Ir a http://192.168.X.X:3002 (misma red WiFi)
+2. Conectar wallet
+3. En la sección **"🔗 UNIRSE A SALA"**, ingresar el número de sala
+4. Clic en **ENTRAR** → clic en **"UNIRSE AL JUEGO"**
+5. Confirmar transacción
 
-// Join a match (pay entry fee)
-function joinMatch(uint256 matchId) external payable;
+### Dificultades
 
-// Start the match (host only, min 2 players)
-function startMatch(uint256 matchId) external;
-
-// Start a round (anyone can call)
-function startRound(uint256 matchId) external;
-
-// Submit your answer (alive players only, before deadline)
-function submit(uint256 matchId, uint8 symbol) external;
-
-// End round (anyone can call after deadline)
-function endRound(uint256 matchId) external;
-
-// Claim pot (winner only)
-function claimWin(uint256 matchId) external;
-```
-
-### View Functions
-
-```solidity
-function getMatch(uint256 matchId) external view returns (Match memory);
-function getPlayers(uint256 matchId) external view returns (address[] memory);
-function isAlive(uint256 matchId, address player) external view returns (bool);
-function lifetimeWins(address player) external view returns (uint256);
-```
-
-### Events
-
-```solidity
-event MatchCreated(uint256 indexed matchId, address indexed host, uint256 entryFee);
-event PlayerJoined(uint256 indexed matchId, address indexed player);
-event MatchStarted(uint256 indexed matchId, uint256 playerCount);
-event RoundStarted(uint256 indexed matchId, uint256 indexed round, uint8 symbol, uint256 deadline);
-event PlayerEliminated(uint256 indexed matchId, uint256 indexed round, address indexed player);
-event MatchFinished(uint256 indexed matchId, address indexed winner, uint256 pot);
-event WinClaimed(uint256 indexed matchId, address indexed winner, uint256 amount);
-```
+| Nivel | Buy-in | Tiempo por ronda |
+|-------|--------|-----------------|
+| Fácil | 0.05 MON | 20s |
+| Medio | 0.10 MON | 15s |
+| Difícil | 0.25 MON | 12s |
+| Insano | 0.50 MON | 10s |
 
 ---
 
-## 🎨 Frontend Integration
-
-The ABI is available at `abi/Tempo.json` for easy frontend integration.
-
-**Key events to listen to:**
-- `RoundStarted` — display the symbol and countdown
-- `PlayerEliminated` — show who got eliminated
-- `MatchFinished` — announce the winner
-
-**Symbol mapping:**
-- `0` = Up (↑)
-- `1` = Down (↓)
-- `2` = Left (←)
-- `3` = Right (→)
-
----
-
-## 🔐 Security Notes
-
-**Randomness:** Uses `block.prevrandao + block.timestamp + matchId + round` hashed and modulo 4. Sufficient for hackathon MVP. Production would use Chainlink VRF or similar.
-
-**Gas Optimization:** Custom errors instead of require strings, checks-effects-interactions pattern, minimal storage reads.
-
----
-
-## 🤖 Bot Automático (H4)
+## 🤖 Bot Automático
 
 El bot monitorea matches activos y llama `endRound()` automáticamente cuando el deadline expira.
-
-### Setup
 
 ```bash
 cd bot
 npm install
-```
-
-### Uso
-
-```bash
-# Iniciar bot
 npm start
-
-# Test helpers (ver estado actual)
-npm test
 ```
-
-Ver `bot/README.md` para documentación completa.
 
 ---
 
-## 📚 Project Structure
+## 📄 Interfaz del Contrato
+
+```solidity
+// Crear sala (host paga entry fee)
+function createMatch(uint256 entryFee, uint256 roundDuration) external payable returns (uint256 matchId);
+
+// Unirse a sala
+function joinMatch(uint256 matchId) external payable;
+
+// Iniciar match (solo host, mínimo 1 jugador)
+function startMatch(uint256 matchId) external;
+
+// Iniciar ronda (cualquiera puede llamar)
+function startRound(uint256 matchId) external;
+
+// Enviar respuesta (jugadores vivos, antes del deadline)
+function submit(uint256 matchId, uint8 symbol) external;
+
+// Cerrar ronda (cualquiera, después del deadline)
+function endRound(uint256 matchId) external;
+
+// Reclamar premio (solo ganador)
+function claimWin(uint256 matchId) external;
+```
+
+---
+
+## 🧪 Tests
+
+```bash
+forge test -vv
+```
+
+**Suite (15/15 passing):**
+- ✅ Happy path: juego completo con 2 rondas, eliminaciones, claim
+- ✅ 9 escenarios de revert
+- ✅ Edge case: todos eliminados → host gana por defecto
+- ✅ 2 fuzz tests
+
+---
+
+## 📚 Estructura del Proyecto
 
 ```
 .
 ├── src/
-│   └── Tempo.sol              # Main game contract
+│   └── Tempo.sol              # Contrato principal
 ├── test/
-│   └── Tempo.t.sol            # Test suite (15 tests)
+│   └── Tempo.t.sol            # Tests (15/15)
 ├── script/
-│   ├── Deploy.s.sol           # Deployment script
-│   ├── Seed.s.sol             # Demo seed script
-│   ├── Interact.s.sol         # Interactive demo scripts
-│   └── Verify.s.sol           # Verification commands
+│   ├── Deploy.s.sol           # Deploy script
+│   ├── Seed.s.sol             # Demo seed
+│   └── Interact.s.sol         # Scripts interactivos
+├── flipchain_export/          # Frontend React
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── App.tsx        # Lógica principal del juego
+│   │   │   ├── components/    # UI components
+│   │   │   └── data/          # Preguntas de trivia
+│   │   └── lib/
+│   │       └── web3.ts        # Config wagmi + ABI
+│   └── package.json
 ├── bot/
-│   ├── endRoundBot.js         # Automated endRound caller
-│   ├── helpers.js             # Frontend helper functions
-│   └── README.md              # Bot documentation
+│   ├── endRoundBot.js         # Bot automático
+│   └── helpers.js             # Helpers para frontend
 ├── abi/
-│   └── Tempo.json             # Clean ABI for frontend
-├── foundry.toml               # Foundry config (Monad settings)
-├── DEPLOYMENT.md              # Deployed contract info
-└── .env.example               # Environment template
+│   └── Tempo.json             # ABI limpio
+├── DEPLOYMENT.md              # Info del contrato deployado
+└── WALLETS.md                 # Wallets de demo
 ```
 
 ---
 
-## 🌐 Network Info
+## 🌐 Red Monad Testnet
 
-**Monad Testnet**
-- Chain ID: `10143`
-- RPC: `https://testnet-rpc.monad.xyz`
-- Block time: ~1 second
-- Faucet: `https://agents.devnads.com/v1/faucet`
-- Explorer (MonadVision): `https://testnet.monadexplorer.com`
-- Explorer (Monadscan): `https://testnet.monadscan.com`
-
----
-
-## 🏆 Why Monad?
-
-**Tempo showcases Monad's killer feature: 1-second blocks.**
-
-On Ethereum (12s blocks), a 3-second round would be impossible — players would need to wait multiple blocks. On Monad, rounds flow naturally at 2-3 seconds, creating genuine rhythm game mechanics on-chain.
-
-This is the future of high-frequency on-chain gaming.
+| Parámetro | Valor |
+|-----------|-------|
+| Chain ID | `10143` |
+| RPC | `https://testnet-rpc.monad.xyz` |
+| Símbolo | `MON` |
+| Block time | ~1 segundo |
+| Faucet | `https://agents.devnads.com/v1/faucet` |
+| Explorer | `https://testnet.monadscan.com` |
 
 ---
 
-## 📝 License
+## 🏆 ¿Por qué Monad?
+
+**FlipChain demuestra la killer feature de Monad: bloques de 1 segundo.**
+
+En Ethereum (12s por bloque), rondas de 10-20 segundos serían lentas e impredecibles. En Monad, las transacciones se confirman en ~1 segundo, creando una experiencia de juego fluida y genuinamente competitiva on-chain.
+
+Esto es el futuro del gaming on-chain de alta frecuencia.
+
+---
+
+## 🔐 Seguridad
+
+**Randomness:** Usa `block.prevrandao + block.timestamp + matchId + round` hasheado y módulo 4. Suficiente para MVP de hackathon. Producción usaría Chainlink VRF.
+
+**Patrones:** Custom errors, checks-effects-interactions, mínimas lecturas de storage.
+
+---
+
+## 📝 Licencia
 
 MIT
 
 ---
 
-## 🤝 Team
+## 🤝 Equipo
 
-Built with ⚡ for the Monad Hackathon by Team Blitz.
+Construido con ⚡ para el Monad Hackathon por **Team Blitz**.
 
-- Smart Contracts + Deploy + Backend: [Persona A]
-- Frontend: [Persona B]
-- Design + UX: [Persona C]
+- **Smart Contracts + Backend + Deploy:** Hector Martinez
+- **Frontend + Integración Web3:** Team Blitz
+- **Diseño + UX:** Team Blitz
