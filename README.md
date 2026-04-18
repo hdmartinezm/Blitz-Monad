@@ -176,6 +176,37 @@ forge script script/Interact.s.sol:ClaimWin \
   --private-key $PRIVATE_KEY
 ```
 
+### Automated Full Demo (For Pitch)
+
+Complete game from start to finish with 3 players:
+
+```bash
+forge script script/DemoFull.s.sol:DemoFull \
+  --rpc-url monad_testnet \
+  --broadcast \
+  --private-key $PRIVATE_KEY
+```
+
+This script:
+1. Creates a match (host pays entry fee)
+2. Player2 and Player3 join
+3. Host starts the match
+4. Plays 3 rounds with eliminations
+5. Winner claims the pot
+
+Perfect for live demonstrations during the pitch!
+
+### Quick Test
+
+Verify the deployed contract is working:
+
+```bash
+forge script script/QuickTest.s.sol:QuickTest \
+  --rpc-url monad_testnet \
+  --broadcast \
+  --private-key $PRIVATE_KEY
+```
+
 ---
 
 ## 🧪 Testing
