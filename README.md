@@ -277,6 +277,31 @@ The ABI is available at `abi/Tempo.json` for easy frontend integration.
 
 ---
 
+## 🤖 Bot Automático (H4)
+
+El bot monitorea matches activos y llama `endRound()` automáticamente cuando el deadline expira.
+
+### Setup
+
+```bash
+cd bot
+npm install
+```
+
+### Uso
+
+```bash
+# Iniciar bot
+npm start
+
+# Test helpers (ver estado actual)
+npm test
+```
+
+Ver `bot/README.md` para documentación completa.
+
+---
+
 ## 📚 Project Structure
 
 ```
@@ -290,9 +315,14 @@ The ABI is available at `abi/Tempo.json` for easy frontend integration.
 │   ├── Seed.s.sol             # Demo seed script
 │   ├── Interact.s.sol         # Interactive demo scripts
 │   └── Verify.s.sol           # Verification commands
+├── bot/
+│   ├── endRoundBot.js         # Automated endRound caller
+│   ├── helpers.js             # Frontend helper functions
+│   └── README.md              # Bot documentation
 ├── abi/
 │   └── Tempo.json             # Clean ABI for frontend
 ├── foundry.toml               # Foundry config (Monad settings)
+├── DEPLOYMENT.md              # Deployed contract info
 └── .env.example               # Environment template
 ```
 

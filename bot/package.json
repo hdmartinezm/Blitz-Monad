@@ -1,0 +1,19 @@
+{
+  "name": "tempo-bot",
+  "version": "1.0.0",
+  "description": "Automated bot for Tempo game - calls endRound when deadlines expire",
+  "type": "module",
+  "main": "endRoundBot.js",
+  "scripts": {
+    "start": "node endRoundBot.js",
+    "dev": "node --watch endRoundBot.js",
+    "test": "node test-helpers.js"
+  },
+  "keywords": ["monad", "tempo", "bot", "blockchain"],
+  "author": "Team Blitz",
+  "license": "MIT",
+  "dependencies": {
+    "viem": "^2.21.54",
+    "dotenv": "^16.4.7"
+  }
+}

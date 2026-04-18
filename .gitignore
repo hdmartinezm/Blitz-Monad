@@ -12,3 +12,7 @@ docs/
 
 # Dotenv file
 .env
+
+# Bot dependencies
+bot/node_modules/
+bot/package-lock.json
