@@ -101,3 +101,12 @@ curl -X POST https://agents.devnads.com/v1/faucet \
 - ✅ `.env` en `.gitignore` (no se commitea)
 - ✅ Solo para testnet - NO usar en mainnet
 - ⚠️ Si commiteas por error, regenera las wallets inmediatamente
+
+---
+
+## Wallet 4 - Player 4 (nuevo participante)
+
+**Address:** `0xb6Fb54263a62dc0383D62Ba66DED6F7A48aEc10d`  
+**Private Key:** `0x9368b8b72af19bd0735f557510a4c2bbdab09ef29d2884af8b4d48e85c502df0`  
+**Balance:** 1 MON  
+**Funded TX:** `0x5a2cfe571d2300e44c8d5f9a321a8bd47c84f00a32def4ba0017b47f4ac9ed49`

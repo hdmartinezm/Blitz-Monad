@@ -99,13 +99,13 @@ contract Tempo {
         emit PlayerJoined(matchId, msg.sender);
     }
 
-    /// @notice Solo el host puede arrancar, mínimo 2 jugadores
+    /// @notice Solo el host puede arrancar, mínimo 1 jugador
     function startMatch(uint256 matchId) external {
         Match storage m = matches[matchId];
         if (m.host == address(0))              revert MatchNotFound();
         if (msg.sender != m.host)              revert OnlyHost();
         if (m.status != MatchStatus.Lobby)     revert WrongStatus();
-        if (matchPlayers[matchId].length < 2)  revert NotEnoughPlayers();
+        if (matchPlayers[matchId].length < 1)  revert NotEnoughPlayers();
 
         m.status = MatchStatus.Playing;
         emit MatchStarted(matchId, matchPlayers[matchId].length);
